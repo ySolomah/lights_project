@@ -30,8 +30,8 @@ def colour_wheel(pixel_pos, num_led):
     return (r, g, b)
         
 
-MIN_FREQ = 100
-MAX_FREQ = 17000
+MIN_FREQ = 50
+MAX_FREQ = 18000
 
 p = pyaudio.PyAudio()
 info = p.get_host_api_info_by_index(0)
@@ -50,7 +50,7 @@ RATE = 44100
 #    data = np.fromstring(stream.read(CHUNK), dtype=np.int16)
 #    print(data)
 
-melmat, (melfreq, _) = compute_melmat(30, MIN_FREQ, MAX_FREQ, num_fft_bands=22051, sample_rate=44100)
+melmat, (melfreq, _) = compute_melmat(60, MIN_FREQ, MAX_FREQ, num_fft_bands=22051, sample_rate=44100)
 sum_melmat = melmat.sum(axis=1)
 norm_melmat = melmat / sum_melmat[:, np.newaxis]
 
@@ -134,17 +134,17 @@ while done_loop < num_times:
          
     leds_to_disp = np.divide((full_freq_to_plot - moving_avg_arr), moving_avg_arr)
     leds_to_disp = np.maximum(leds_to_disp, 0)
-    print("beforebefore loop ", len(leds_to_disp))
-    print("before loop ", len(leds_to_disp))
+    #print("beforebefore loop ", len(leds_to_disp))
+    #print("before loop ", len(leds_to_disp))
     if (len(leds_to_disp) == 0):
         pixels.fill((0, 0, 0))
     else:
-        print(leds_to_disp)
-        print(len(leds_to_disp))
+        #print(leds_to_disp)
+        #print(len(leds_to_disp))
         leds_to_disp = leds_to_disp / np.amax(leds_to_disp + 0.0001)
-        print(leds_to_disp)
+        #print(leds_to_disp)
         pixels.fill((0, 0, 0))
-        for i in range(0, 30):
+        for i in range(0, 60):
             pixel_pos = ((len(leds_to_disp) * 2 - 1) - i) % len(leds_to_disp)
             scalar_factor = leds_to_disp[i]
             
