@@ -4,6 +4,7 @@ from scipy.fft import fft, ifft, fftfreq
 import matplotlib.pyplot as plt
 import time
 from melbank import compute_melmat
+from scipy import interpolate
 
 
 import board
@@ -30,8 +31,8 @@ def colour_wheel(pixel_pos, num_led):
     return (r, g, b)
         
 
-MIN_FREQ = 50
-MAX_FREQ = 18000
+MIN_FREQ = 100
+MAX_FREQ = 15000
 
 p = pyaudio.PyAudio()
 info = p.get_host_api_info_by_index(0)
@@ -67,10 +68,12 @@ NUM_PIXELS = 60
 
 pixels = neopixel.NeoPixel(board.D21, NUM_PIXELS, brightness=0.5, pixel_order=neopixel.GRB, auto_write=False)
 
+MOVING_AVG_LEN = 25
 
-num_times = 500
+num_times = 1000
 done_loop = 0
 while done_loop < num_times:
+    time_0 = time.time()
     print(done_loop)
     done_loop = done_loop + 1
     stream = p.open(format=pyaudio.paInt16, channels=1, rate=RATE, input=True,
@@ -86,35 +89,68 @@ while done_loop < num_times:
     #print(np.shape(melmat))
     full_freq = np.zeros(RATE//2 + 1)
     #print(np.shape(full_freq))
-    for i in range(len(freq_buckets)):
-        #print(freq_buckets[i])
-        left_idx = int(freq_buckets[i])
-        right_idx = left_idx + 1
-        full_freq[left_idx] = fft_arr[i]
-        full_freq[right_idx] = fft_arr[i]
-    prev_value = 0;
-    # ACTUAL LINEAR INTERPOLATE 1d interpol scipy???
-    for i in range(len(full_freq)):
-        if (full_freq[i] > 0):
-            prev_value = full_freq[i]
-        if (full_freq[i] == 0):
-            full_freq[i] = prev_value
+    time_1 = time.time()
     
-    full_freq_to_plot = np.log(np.dot(melmat, full_freq))
+    f_scipy_interpol = interpolate.interp1d(freq_buckets, fft_arr, fill_value="extrapolate")
+    
+    print('time of stream open and fft and freq bucket : ', time_1 - time_0)
+    #for i in range(len(freq_buckets)):
+    #    #print(freq_buckets[i])
+    #    left_idx = int(freq_buckets[i])
+    #    right_idx = left_idx + 1
+    #    full_freq[left_idx] = fft_arr[i]
+    #    full_freq[right_idx] = fft_arr[i]
+    #    if (i == 0 or i == len(freq_buckets) -1):
+    #        print('left idx ', left_idx)
+    #        print('right idx ', right_idx)
+    time_2 = time.time()
+    print('time of make freq array : ', time_2 - time_1)
+    #prev_value = 0;
+    # ACTUAL LINEAR INTEPOLATE 1d interpol scipy???
+    #for i in range(len(full_freq)):
+    #    if (full_freq[i] > 0):
+    #        prev_value = full_freq[i]
+    #    if (full_freq[i] == 0):
+    #        full_freq[i] = prev_value
+    time_3 = time.time()
+    print('time of full freq array : ', time_3 - time_2)
+    
+    fft_freqs_new_bucket = np.arange(0, 22051, 1)
+    new_full_freq_to_plot = f_scipy_interpol(fft_freqs_new_bucket)
+    #print(np.ndim(new_full_freq_to_plot))
+    #print(np.shape(new_full_freq_to_plot))
+    #print(new_full_freq_to_plot.dtype)
+    #print(np.ndim(full_freq))
+    #print(np.shape(full_freq))
+    #print(full_freq.dtype)
+    
+    #full_freq_to_plot = np.log(np.dot(melmat, full_freq))
+
+    full_freq_to_plot = np.log(melmat.dot(new_full_freq_to_plot))
+    
+    #full_freq_to_plot = np.log(np.dot(melmat, full_freq))
+    
+    time_4 = time.time()
+    print('time of np log and matrix mul : ', time_4 - time_3)
+
     
     #print(np.shape(full_freq_to_plot))
     
-    if (len(arr_of_vals) >= 10):
+    if (len(arr_of_vals) >= MOVING_AVG_LEN):
         remove_from_avg = arr_of_vals.pop()
         arr_of_vals.append(full_freq_to_plot)
-        moving_avg_arr = moving_avg_arr - (remove_from_avg / 10) + (full_freq_to_plot / 10)
+        moving_avg_arr = moving_avg_arr - (remove_from_avg / MOVING_AVG_LEN) + (full_freq_to_plot / MOVING_AVG_LEN)
         #print(moving_avg_arr)
     else:
         arr_of_vals.append(full_freq_to_plot)
         if (moving_avg_arr is None):
-            moving_avg_arr = (full_freq_to_plot / 10)
+            moving_avg_arr = (full_freq_to_plot / MOVING_AVG_LEN)
         else:
-            moving_avg_arr = moving_avg_arr + (full_freq_to_plot / 10)
+            moving_avg_arr = moving_avg_arr + (full_freq_to_plot / MOVING_AVG_LEN)
+            
+    time_5 = time.time()
+    print('time of moving avg : ', time_5 - time_4)
+
     
     #print(np.shape(full_freq_to_plot))
     #print(len(arr_of_vals))
@@ -134,6 +170,8 @@ while done_loop < num_times:
          
     leds_to_disp = np.divide((full_freq_to_plot - moving_avg_arr), moving_avg_arr)
     leds_to_disp = np.maximum(leds_to_disp, 0)
+    print(leds_to_disp < 0.02)
+    leds_to_disp = np.floor(leds_to_disp, where=leds_to_disp < 0.02)
     #print("beforebefore loop ", len(leds_to_disp))
     #print("before loop ", len(leds_to_disp))
     if (len(leds_to_disp) == 0):
@@ -152,12 +190,18 @@ while done_loop < num_times:
             pixels[i] = ((int)(0.50 * scalar_factor * g), (int)(0.50 * scalar_factor * r), (int)(0.50 * scalar_factor * b))
     pixels.show()
     
+    time_6 = time.time()
+    
+    print('time of led disp : ', time_6 - time_5)
+
+    print('e2e time : ', time_6 - time_0)
+    
     #plt.grid()
     #plt.draw()
     #plt.pause(0.00001)
     #plt.clf()
     
-    time.sleep(100 / 1000)
+    time.sleep(50 / 1000)
     
 
 
