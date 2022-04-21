@@ -11,34 +11,12 @@ import board
 import neopixel
 
 import config
+import mic_read
+
+import colour_wheel
 
 
-def colour_wheel(pixel_pos, num_led):
-    wheel_pos = (255 / num_led) * pixel_pos
-    r, g, b = (0, 0, 0)
-    if (wheel_pos < 85):
-        r = 255 - wheel_pos * 3
-        g = wheel_pos * 3
-        b = 0
-    elif (wheel_pos < 170):
-        wheel_pos = wheel_pos - 85
-        r = 0
-        g = 255 - wheel_pos * 3
-        b = wheel_pos * 3
-    else:
-        wheel_pos = wheel_pos - 170
-        r = wheel_pos * 3
-        g = 0
-        b = 255 - wheel_pos * 3
-    return (r, g, b)
-        
 
-p = pyaudio.PyAudio()
-info = p.get_host_api_info_by_index(0)
-num_dev = info.get('deviceCount')
-for i in range(0, num_dev):
-    if (p.get_device_info_by_host_api_device_index(0, i).get('maxInputChannels')) > 0:
-        print('Input dev id ', i, ' - ', p.get_device_info_by_host_api_device_index(0, i))
 
 
 melmat, (melfreq, _) = compute_melmat(config.NUM_PIXELS, config.MIN_FREQ, config.MAX_FREQ, num_fft_bands=(config.RATE // 2) + 1, sample_rate=config.RATE)
@@ -48,9 +26,11 @@ norm_melmat = melmat / sum_melmat[:, np.newaxis]
 arr_of_vals = []
 moving_avg_arr = None
 
+mic_reader = mic_read.MicReader()
+
 wheel_pos_arr = []
 for i in range(config.NUM_PIXELS):
-    wheel_pos_arr.append(colour_wheel(i, config.NUM_PIXELS))
+    wheel_pos_arr.append(colour_wheel.colour_wheel(i, config.NUM_PIXELS))
 
 print(wheel_pos_arr)
 
@@ -61,13 +41,14 @@ while done_loop < config.NUM_TIMES_TO_RUN_LOOP:
     time_0 = time.time()
     print(done_loop)
     done_loop = done_loop + 1
-    stream = p.open(format=pyaudio.paInt16, channels=1, rate=config.RATE, input=True, frames_per_buffer=config.CHUNK)
-    data = np.fromstring(stream.read(config.CHUNK), dtype=np.int16)
-    stream.stop_stream()
-    stream.close()
-    fft_arr = np.abs(fft(data)[1:config.CHUNK // 2])
-    freq_buckets = fftfreq(config.CHUNK, d=1 / config.RATE)[1:config.CHUNK // 2]
-    full_freq = np.zeros((config.RATE // 2) + 1)
+    mic_data = mic_reader.read_stream()
+    if mic_data is None:
+        # We missed audio data, let's just wait a second for it
+        time.sleep(1)
+        continue
+    data = np.fromstring(mic_data, dtype=np.int16)
+    fft_arr = np.abs(fft(data)[1:config.CHUNK * config.NUM_AUDIO_BLOCKS_FOR_FFT // 2])
+    freq_buckets = fftfreq(config.CHUNK * config.NUM_AUDIO_BLOCKS_FOR_FFT, d=1 / config.RATE)[1:config.CHUNK * config.NUM_AUDIO_BLOCKS_FOR_FFT // 2]
     #print(np.shape(full_freq))
     time_1 = time.time()
     
@@ -137,6 +118,4 @@ while done_loop < config.NUM_TIMES_TO_RUN_LOOP:
     
 
 
-stream.stop_stream()
-stream.close()
-p.terminate()
+mic_reader.close_stream()

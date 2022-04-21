@@ -2,7 +2,7 @@ import board
 import neopixel
 
 # Minimum frequency band to keep around in melmat/triangular filters
-MIN_FREQ = 100
+MIN_FREQ = 50
 
 # Maximum frequency band to keep around in the melmat/triangular filters
 MAX_FREQ = 15000
@@ -40,13 +40,16 @@ AUTO_WRITE_LED = False
 # This implies the FFT bucketized value after melmat mult must
 # be at least (1 + threshold) relatively greater than the moving
 # average
-THRESHOLD_FOR_LED_DISP = 0.02
+THRESHOLD_FOR_LED_DISP = 0.015
 
 # Global LED Pixel Multiplier
-LED_PIXEL_MULTIPLIER = 0.50
+LED_PIXEL_MULTIPLIER = 1.0
 
 # Bias to prevent zero division with LEDs array
 DIVISION_ADDED_BIAS = 0.001
 
 # Added Sleep for LED display in ms
-ADDED_SLEEP_MS = 50
+ADDED_SLEEP_MS = 100
+
+# Moving Data Array Size
+NUM_AUDIO_BLOCKS_FOR_FFT = 3
