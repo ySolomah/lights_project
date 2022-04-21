@@ -12,6 +12,7 @@ import neopixel
 
 import config
 import mic_read
+import pixel_displayer
 
 import colour_wheel
 
@@ -27,6 +28,7 @@ arr_of_vals = []
 moving_avg_arr = None
 
 mic_reader = mic_read.MicReader()
+pixel_displayer = pixel_displayer.PixelDisplayer()
 
 wheel_pos_arr = []
 for i in range(config.NUM_PIXELS):
@@ -34,7 +36,6 @@ for i in range(config.NUM_PIXELS):
 
 print(wheel_pos_arr)
 
-pixels = neopixel.NeoPixel(config.PI_PIN, config.NUM_PIXELS, brightness=config.BRIGHTNESS_MULTIPLIER, pixel_order=config.PIXEL_DATA_ORDER, auto_write=config.AUTO_WRITE_LED)
 
 done_loop = 0
 while done_loop < config.NUM_TIMES_TO_RUN_LOOP:
@@ -91,21 +92,10 @@ while done_loop < config.NUM_TIMES_TO_RUN_LOOP:
     leds_to_disp = np.divide((full_freq_to_plot - moving_avg_arr), moving_avg_arr)
     leds_to_disp = np.maximum(leds_to_disp, 0)
     leds_to_disp = np.floor(leds_to_disp, where=leds_to_disp < config.THRESHOLD_FOR_LED_DISP)
-    if (len(leds_to_disp) == 0):
-        pixels.fill((0, 0, 0))
-    else:
-        #print(leds_to_disp)
-        #print(len(leds_to_disp))
-        leds_to_disp = leds_to_disp / np.amax(leds_to_disp + config.DIVISION_ADDED_BIAS)
-        #print(leds_to_disp)
-        pixels.fill((0, 0, 0))
-        for i in range(0, 60):
-            pixel_pos = ((len(leds_to_disp) * 2 - 1) - i) % len(leds_to_disp)
-            scalar_factor = leds_to_disp[i]
-            
-            (r, g, b) = wheel_pos_arr[i]
-            pixels[i] = ((int)(config.LED_PIXEL_MULTIPLIER * scalar_factor * g), (int)(config.LED_PIXEL_MULTIPLIER * scalar_factor * r), (int)(config.LED_PIXEL_MULTIPLIER * scalar_factor * b))
-    pixels.show()
+    leds_to_disp = leds_to_disp / np.amax(leds_to_disp + config.DIVISION_ADDED_BIAS)
+    
+    pixel_displayer.display_leds(leds_to_disp, wheel_pos_arr)
+
     
     time_6 = time.time()
     

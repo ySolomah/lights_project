@@ -22,7 +22,7 @@ NUM_PIXELS = 60
 MOVING_AVG_LEN = 25
 
 # Times to run loop, set to -1 for while true
-NUM_TIMES_TO_RUN_LOOP = 1000
+NUM_TIMES_TO_RUN_LOOP = 2000
 
 # Raspberry PI pin to push data to
 PI_PIN = board.D21
