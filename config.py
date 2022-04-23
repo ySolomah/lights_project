@@ -14,7 +14,7 @@ CHUNK = 4096
 RATE = 44100
 
 # Number of pixels on LED strip
-NUM_PIXELS = 60
+NUM_PIXELS = 20
 
 # Samples to store in moving average for denoising
 # Loop roughly takes 0.15s, and with delay of 0.1s
@@ -28,7 +28,7 @@ NUM_TIMES_TO_RUN_LOOP = 2000
 PI_PIN = board.D21
 
 # Brightness multiplier
-BRIGHTNESS_MULTIPLIER = 0.5
+BRIGHTNESS_MULTIPLIER = 1.0
 
 # Pixel data order
 PIXEL_DATA_ORDER = neopixel.GRB
@@ -40,7 +40,8 @@ AUTO_WRITE_LED = False
 # This implies the FFT bucketized value after melmat mult must
 # be at least (1 + threshold) relatively greater than the moving
 # average
-THRESHOLD_FOR_LED_DISP = 0.015
+THRESHOLD_FOR_LED_DISP_LOG_SCALE = 0.01
+THRESHOLD_FOR_LED_DISP = 0.1
 
 # Global LED Pixel Multiplier
 LED_PIXEL_MULTIPLIER = 1.0
@@ -53,3 +54,9 @@ ADDED_SLEEP_MS = 100
 
 # Moving Data Array Size
 NUM_AUDIO_BLOCKS_FOR_FFT = 3
+
+# Use normalized melbank matrix
+USE_NORMAL_MELBANK = False
+
+# Use log scale during processing
+USE_LOG_SCALE = True
