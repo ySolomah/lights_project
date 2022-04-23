@@ -5,7 +5,7 @@ import neopixel
 MIN_FREQ = 50
 
 # Maximum frequency band to keep around in the melmat/triangular filters
-MAX_FREQ = 15000
+MAX_FREQ = 12000
 
 # Number of samples to read in single iteration from mic
 CHUNK = 4096
@@ -14,12 +14,12 @@ CHUNK = 4096
 RATE = 44100
 
 # Number of pixels on LED strip
-NUM_PIXELS = 20
+NUM_PIXELS = 60
 
 # Samples to store in moving average for denoising
 # Loop roughly takes 0.15s, and with delay of 0.1s
 # this implies 0.25s * 25 = 6.25s of moving average
-MOVING_AVG_LEN = 25
+MOVING_AVG_LEN = 50
 
 # Times to run loop, set to -1 for while true
 NUM_TIMES_TO_RUN_LOOP = 2000
@@ -41,13 +41,13 @@ AUTO_WRITE_LED = False
 # be at least (1 + threshold) relatively greater than the moving
 # average
 THRESHOLD_FOR_LED_DISP_LOG_SCALE = 0.01
-THRESHOLD_FOR_LED_DISP = 0.1
+THRESHOLD_FOR_LED_DISP = 0.15
 
 # Global LED Pixel Multiplier
 LED_PIXEL_MULTIPLIER = 1.0
 
 # Bias to prevent zero division with LEDs array
-DIVISION_ADDED_BIAS = 0.001
+DIVISION_ADDED_BIAS = 0.0001
 
 # Added Sleep for LED display in ms
 ADDED_SLEEP_MS = 100

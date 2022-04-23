@@ -13,28 +13,20 @@ import pixel_displayer
 
 import colour_wheel
 import audio_data_processor
-
-
-
-arr_of_vals = []
-moving_avg_arr = None
-
-mic_reader = mic_read.MicReader()
-pixel_displayer = pixel_displayer.PixelDisplayer()
-
-wheel_pos_arr = []
-for i in range(config.NUM_PIXELS):
-    wheel_pos_arr.append(colour_wheel.colour_wheel(i, config.NUM_PIXELS))
-
-print(wheel_pos_arr)
+import moving_average
+import led_filter
 
 
 audio_data_processor = audio_data_processor.AudioDataProcessor()
+mic_reader = mic_read.MicReader()
+pixel_displayer = pixel_displayer.PixelDisplayer()
+moving_average = moving_average.MovingAverage()
+wheel_pos_arr = colour_wheel.create_colour_wheel()
 
 done_loop = 0
 while done_loop < config.NUM_TIMES_TO_RUN_LOOP:
     # For perf measure
-    time_0 = time.time()
+    start_time = time.time()
     print(done_loop)
     
     # Iterate loop, to be removed
@@ -50,42 +42,21 @@ while done_loop < config.NUM_TIMES_TO_RUN_LOOP:
     # Process data
     full_freq_processed = audio_data_processor.process_raw_audio_data(mic_data)
     
-
+    # Add new element to moving average
+    moving_avg_arr = moving_average.update_moving_average(full_freq_processed)
+                
+    # Consider adding some level of bias into denominator? p50 of average array maybe?
+    leds_to_disp = led_filter.filter_and_create_led_display_array(full_freq_processed, moving_avg_arr)
     
-    
-    if (len(arr_of_vals) >= config.MOVING_AVG_LEN):
-        remove_from_avg = arr_of_vals.pop()
-        arr_of_vals.append(full_freq_processed)
-        moving_avg_arr = moving_avg_arr - (remove_from_avg / config.MOVING_AVG_LEN) + (full_freq_processed / config.MOVING_AVG_LEN)
-        #print(moving_avg_arr)
-    else:
-        arr_of_vals.append(full_freq_processed)
-        if (moving_avg_arr is None):
-            moving_avg_arr = (full_freq_processed / config.MOVING_AVG_LEN)
-        else:
-            moving_avg_arr = moving_avg_arr + (full_freq_processed / config.MOVING_AVG_LEN)
-            
-
-    
-        
-         
-    leds_to_disp = np.divide((full_freq_processed - moving_avg_arr), moving_avg_arr)
-    leds_to_disp = np.maximum(leds_to_disp, 0)
-    threshold = config.THRESHOLD_FOR_LED_DISP_LOG_SCALE if config.USE_LOG_SCALE else config.THRESHOLD_FOR_LED_DISP
-    leds_to_disp = np.floor(leds_to_disp, where=leds_to_disp < threshold)
-    leds_to_disp = leds_to_disp / np.amax(leds_to_disp + config.DIVISION_ADDED_BIAS)
-    
+    # Display leds
     pixel_displayer.display_leds(leds_to_disp, wheel_pos_arr)
-
     
-    time_6 = time.time()
+    # E2E time to process
+    end_time = time.time()
+    print('e2e time : ', end_time - start_time)
     
-
-    print('e2e time : ', time_6 - time_0)
-    
-    
+    # Added sleep
     time.sleep(config.ADDED_SLEEP_MS / 1000)
-    
 
-
+# Close mic
 mic_reader.close_stream()

@@ -1,3 +1,5 @@
+import config
+
 # Determine colour of LED based on number of LEDs and position of pixel
 def colour_wheel(pixel_pos, num_led):
     wheel_pos = (255 / num_led) * pixel_pos
@@ -18,3 +20,9 @@ def colour_wheel(pixel_pos, num_led):
         b = 0
     return (r, g, b)
         
+# Helper to create colour wheel
+def create_colour_wheel():
+    wheel_pos_arr = []
+    for i in range(config.NUM_PIXELS):
+        wheel_pos_arr.append(colour_wheel(i, config.NUM_PIXELS))
+    return wheel_pos_arr
