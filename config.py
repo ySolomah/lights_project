@@ -22,7 +22,7 @@ NUM_PIXELS = 60
 MOVING_AVG_LEN = 50
 
 # Times to run loop, set to -1 for while true
-NUM_TIMES_TO_RUN_LOOP = 2000
+NUM_TIMES_TO_RUN_LOOP = -1
 
 # Raspberry PI pin to push data to
 PI_PIN = board.D21
@@ -50,7 +50,7 @@ LED_PIXEL_MULTIPLIER = 1.0
 DIVISION_ADDED_BIAS = 0.0001
 
 # Added Sleep for LED display in ms
-ADDED_SLEEP_MS = 100
+ADDED_SLEEP_MS = 50
 
 # Moving Data Array Size
 NUM_AUDIO_BLOCKS_FOR_FFT = 3
